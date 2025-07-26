@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio - Sistema de Turnos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-clock me-2"></i>Sistema de Turnos
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Alternar navegacion">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i>Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/panel_admin">
+                            <i class="fas fa-cog me-1"></i>Panel Admin
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">
+                            <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesion
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/registro">
+                            <i class="fas fa-user-plus me-1"></i>Registrarse
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="text-center mb-5">
+                    <h1 class="display-4 text-primary">
+                        <i class="fas fa-clock me-3"></i>Sistema de Turnos
+                    </h1>
+                    <p class="lead">Selecciona el tipo de atencion que necesitas y obten tu turno</p>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="fas fa-users fa-3x text-primary"></i>
+                                </div>
+                                <h5 class="card-title">Atencion General</h5>
+                                <p class="card-text text-muted">Consultas generales</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>Tiempo estimado: 15 min
+                                    </small>
+                                </p>
+                                <form method="POST" action="/sacar_turno">
+                                    <input type="hidden" name="categoria_id" value="1">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-ticket-alt me-2"></i>Sacar Turno
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="fas fa-credit-card fa-3x text-success"></i>
+                                </div>
+                                <h5 class="card-title">Pagos</h5>
+                                <p class="card-text text-muted">Realizar pagos</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>Tiempo estimado: 10 min
+                                    </small>
+                                </p>
+                                <form method="POST" action="/sacar_turno">
+                                    <input type="hidden" name="categoria_id" value="2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-ticket-alt me-2"></i>Sacar Turno
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                                </div>
+                                <h5 class="card-title">Reclamos</h5>
+                                <p class="card-text text-muted">Presentar reclamos</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>Tiempo estimado: 20 min
+                                    </small>
+                                </p>
+                                <form method="POST" action="/sacar_turno">
+                                    <input type="hidden" name="categoria_id" value="3">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-ticket-alt me-2"></i>Sacar Turno
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body text-center">
+                                <div class="mb-3">
+                                    <i class="fas fa-file-alt fa-3x text-info"></i>
+                                </div>
+                                <h5 class="card-title">Informes</h5>
+                                <p class="card-text text-muted">Solicitar informes</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>Tiempo estimado: 25 min
+                                    </small>
+                                </p>
+                                <form method="POST" action="/sacar_turno">
+                                    <input type="hidden" name="categoria_id" value="4">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-ticket-alt me-2"></i>Sacar Turno
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-5">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title text-center mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Informacion del Sistema
+                                </h5>
+                                <div class="row text-center">
+                                    <div class="col-md-4">
+                                        <i class="fas fa-clock fa-2x text-primary mb-2"></i>
+                                        <h6>Horario de Atencion</h6>
+                                        <p class="small text-muted">Lunes a Viernes<br>8:00 - 18:00</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="fas fa-phone fa-2x text-success mb-2"></i>
+                                        <h6>Contacto</h6>
+                                        <p class="small text-muted">Tel: (123) 456-7890<br>Email: info@turnero.com</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="fas fa-map-marker-alt fa-2x text-warning mb-2"></i>
+                                        <h6>Ubicacion</h6>
+                                        <p class="small text-muted">Av. Principal 123<br>Ciudad, Pais</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-light text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">Copyright 2024 Sistema de Turnos. Desarrollado con Flask.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
