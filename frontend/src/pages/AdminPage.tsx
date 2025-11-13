@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { turnosAPI, estadisticasAPI, Turno, Estadisticas } from '../services/api';
 import { TurnoManager } from '../components/admin/TurnoManager';
-import { Estadisticas } from '../components/admin/Estadisticas';
+import { Estadisticas as EstadisticasComponent } from '../components/admin/Estadisticas';
 import { Loading } from '../components/common/Loading';
 import toast from 'react-hot-toast';
 
@@ -147,7 +147,7 @@ export const AdminPage = () => {
                   </h5>
                 </div>
                 <div className="card-body">
-                  <Estadisticas estadisticas={estadisticas} />
+                  <EstadisticasComponent estadisticas={estadisticas} />
                 </div>
               </div>
             </div>
