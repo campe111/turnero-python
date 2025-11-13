@@ -1,7 +1,15 @@
 # =============================================================================
-# IMPORTS Y CONFIGURACION
+# SISTEMA DE TURNOS - API REST BACKEND
 # =============================================================================
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+# Backend Flask que proporciona API REST para el frontend React
+# Frontend: React + Vite (desplegado en Vercel)
+# Backend: Flask API (desplegar en Railway/Render/Heroku)
+# =============================================================================
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -16,8 +24,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'tu_clave_secreta_aqui')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///turnero.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.jinja_env.auto_reload = True
 
 # Configurar CORS para API
 CORS(app, resources={
@@ -86,233 +92,7 @@ with app.app_context():
         db.session.commit()
 
 # =============================================================================
-# RUTAS PRINCIPALES
-# =============================================================================
-@app.route('/')
-def index():
-    """Página principal - muestra categorías disponibles"""
-    categorias = Categoria.query.filter_by(activa=True).all()
-    return render_template('index.html', categorias=categorias)
-
-@app.route('/sacar_turno', methods=['POST'])
-def sacar_turno():
-    """Genera un nuevo turno para la categoría seleccionada"""
-    categoria_id = request.form.get('categoria_id')
-    categoria = Categoria.query.get_or_404(categoria_id)
-    
-    # Obtener el último turno de la categoría
-    ultimo_turno = Turno.query.filter_by(categoria_id=categoria_id).order_by(Turno.numero.desc()).first()
-    nuevo_numero = 1 if not ultimo_turno else ultimo_turno.numero + 1
-    
-    # Calcular hora estimada
-    turnos_esperando = Turno.query.filter_by(categoria_id=categoria_id, estado='esperando').count()
-    tiempo_espera = turnos_esperando * categoria.tiempo_estimado
-    hora_estimada = datetime.now() + timedelta(minutes=tiempo_espera)
-    
-    nuevo_turno = Turno(
-        numero=nuevo_numero,
-        categoria_id=categoria_id,
-        hora_estimada=hora_estimada
-    )
-    
-    db.session.add(nuevo_turno)
-    db.session.commit()
-    
-    flash(f'Turno #{nuevo_numero} generado exitosamente. Hora estimada: {hora_estimada.strftime("%H:%M")}', 'success')
-    return redirect(url_for('index'))
-
-# =============================================================================
-# RUTAS DE ADMINISTRACION
-# =============================================================================
-@app.route('/panel_admin')
-def panel_admin():
-    """Panel de administración - gestión de turnos"""
-    if not session.get('es_admin'):
-        flash('Acceso denegado. Debes ser administrador.', 'error')
-        return redirect(url_for('login'))
-    
-    turnos_esperando = Turno.query.filter_by(estado='esperando').order_by(Turno.fecha_creacion).all()
-    turnos_en_atencion = Turno.query.filter_by(estado='en_atencion').all()
-    categorias = Categoria.query.all()
-    
-    return render_template('panel_admin.html', 
-                         turnos_esperando=turnos_esperando,
-                         turnos_en_atencion=turnos_en_atencion,
-                         categorias=categorias)
-
-@app.route('/iniciar_turno/<int:turno_id>')
-def iniciar_turno(turno_id):
-    """Inicia la atención de un turno (compatibilidad con rutas antiguas)"""
-    if not session.get('es_admin'):
-        return jsonify({'error': 'Acceso denegado'}), 403
-    
-    turno = Turno.query.get_or_404(turno_id)
-    turno.estado = 'en_atencion'
-    turno.hora_inicio = datetime.now()
-    db.session.commit()
-    
-    return jsonify({'success': True, 'mensaje': f'Turno #{turno.numero} iniciado'})
-
-@app.route('/api/iniciar_turno/<int:turno_id>', methods=['POST', 'GET'])
-@jwt_required()
-def api_iniciar_turno(turno_id):
-    """Inicia la atención de un turno (API)"""
-    usuario_id = get_jwt_identity()
-    usuario = Usuario.query.get(usuario_id)
-    
-    if not usuario or not usuario.es_admin:
-        return jsonify({'error': 'Acceso denegado'}), 403
-    
-    turno = Turno.query.get_or_404(turno_id)
-    turno.estado = 'en_atencion'
-    turno.hora_inicio = datetime.now()
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'mensaje': f'Turno #{turno.numero} iniciado',
-        'turno': {
-            'id': turno.id,
-            'numero': turno.numero,
-            'estado': turno.estado,
-            'hora_inicio': turno.hora_inicio.isoformat()
-        }
-    })
-
-@app.route('/completar_turno/<int:turno_id>')
-def completar_turno(turno_id):
-    """Marca un turno como completado (compatibilidad)"""
-    if not session.get('es_admin'):
-        return jsonify({'error': 'Acceso denegado'}), 403
-    
-    turno = Turno.query.get_or_404(turno_id)
-    turno.estado = 'completado'
-    turno.hora_fin = datetime.now()
-    db.session.commit()
-    
-    return jsonify({'success': True, 'mensaje': f'Turno #{turno.numero} completado'})
-
-@app.route('/api/completar_turno/<int:turno_id>', methods=['POST', 'GET'])
-@jwt_required()
-def api_completar_turno(turno_id):
-    """Marca un turno como completado (API)"""
-    usuario_id = get_jwt_identity()
-    usuario = Usuario.query.get(usuario_id)
-    
-    if not usuario or not usuario.es_admin:
-        return jsonify({'error': 'Acceso denegado'}), 403
-    
-    turno = Turno.query.get_or_404(turno_id)
-    turno.estado = 'completado'
-    turno.hora_fin = datetime.now()
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'mensaje': f'Turno #{turno.numero} completado',
-        'turno': {
-            'id': turno.id,
-            'numero': turno.numero,
-            'estado': turno.estado,
-            'hora_fin': turno.hora_fin.isoformat()
-        }
-    })
-
-@app.route('/cancelar_turno/<int:turno_id>')
-def cancelar_turno(turno_id):
-    """Cancela un turno (compatibilidad)"""
-    if not session.get('es_admin'):
-        return jsonify({'error': 'Acceso denegado'}), 403
-    
-    turno = Turno.query.get_or_404(turno_id)
-    turno.estado = 'cancelado'
-    db.session.commit()
-    
-    return jsonify({'success': True, 'mensaje': f'Turno #{turno.numero} cancelado'})
-
-@app.route('/api/cancelar_turno/<int:turno_id>', methods=['POST', 'GET'])
-@jwt_required()
-def api_cancelar_turno(turno_id):
-    """Cancela un turno (API)"""
-    usuario_id = get_jwt_identity()
-    usuario = Usuario.query.get(usuario_id)
-    
-    if not usuario or not usuario.es_admin:
-        return jsonify({'error': 'Acceso denegado'}), 403
-    
-    turno = Turno.query.get_or_404(turno_id)
-    turno.estado = 'cancelado'
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'mensaje': f'Turno #{turno.numero} cancelado',
-        'turno': {
-            'id': turno.id,
-            'numero': turno.numero,
-            'estado': turno.estado
-        }
-    })
-
-# =============================================================================
-# RUTAS DE AUTENTICACION
-# =============================================================================
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Página de inicio de sesión"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        usuario = Usuario.query.filter_by(email=email).first()
-        
-        if usuario and check_password_hash(usuario.password_hash, password):
-            session['usuario_id'] = usuario.id
-            session['nombre'] = usuario.nombre
-            session['es_admin'] = usuario.es_admin
-            flash('Inicio de sesión exitoso!', 'success')
-            return redirect(url_for('panel_admin') if usuario.es_admin else url_for('index'))
-        else:
-            flash('Email o contraseña incorrectos', 'error')
-    
-    return render_template('login.html')
-
-@app.route('/registro', methods=['GET', 'POST'])
-def registro():
-    """Página de registro de usuarios"""
-    if request.method == 'POST':
-        nombre = request.form.get('nombre')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        if Usuario.query.filter_by(email=email).first():
-            flash('El email ya está registrado', 'error')
-            return render_template('registro.html')
-        
-        password_hash = generate_password_hash(password)
-        nuevo_usuario = Usuario(nombre=nombre, email=email, password_hash=password_hash)
-        
-        db.session.add(nuevo_usuario)
-        db.session.commit()
-        
-        flash('Usuario registrado exitosamente!', 'success')
-        return redirect(url_for('login'))
-    
-    return render_template('registro.html')
-
-@app.route('/logout')
-def logout():
-    """Cierra la sesión del usuario"""
-    session.clear()
-    flash('Sesión cerrada exitosamente', 'success')
-    return redirect(url_for('index'))
-
-# =============================================================================
-# API ENDPOINTS
-# =============================================================================
-
-# =============================================================================
-# ENDPOINTS DE CATEGORÍAS
+# API ENDPOINTS - CATEGORÍAS
 # =============================================================================
 @app.route('/api/categorias', methods=['GET'])
 def api_categorias():
@@ -338,7 +118,7 @@ def api_categoria(categoria_id):
     })
 
 # =============================================================================
-# ENDPOINTS DE TURNOS
+# API ENDPOINTS - TURNOS
 # =============================================================================
 @app.route('/api/turnos', methods=['GET'])
 def api_turnos():
@@ -422,19 +202,84 @@ def api_turno(turno_id):
         'hora_fin': turno.hora_fin.isoformat() if turno.hora_fin else None
     })
 
-@app.route('/api/turnos_esperando')
-def api_turnos_esperando():
-    """API para obtener turnos en espera (compatibilidad)"""
-    turnos = Turno.query.filter_by(estado='esperando').order_by(Turno.fecha_creacion).all()
-    return jsonify([{
-        'id': t.id,
-        'numero': t.numero,
-        'categoria': t.categoria.nombre,
-        'hora_estimada': t.hora_estimada.strftime("%H:%M") if t.hora_estimada else None
-    } for t in turnos])
+@app.route('/api/iniciar_turno/<int:turno_id>', methods=['POST'])
+@jwt_required()
+def api_iniciar_turno(turno_id):
+    """Inicia la atención de un turno"""
+    usuario_id = get_jwt_identity()
+    usuario = Usuario.query.get(usuario_id)
+    
+    if not usuario or not usuario.es_admin:
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    turno = Turno.query.get_or_404(turno_id)
+    turno.estado = 'en_atencion'
+    turno.hora_inicio = datetime.now()
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'mensaje': f'Turno #{turno.numero} iniciado',
+        'turno': {
+            'id': turno.id,
+            'numero': turno.numero,
+            'estado': turno.estado,
+            'hora_inicio': turno.hora_inicio.isoformat()
+        }
+    })
+
+@app.route('/api/completar_turno/<int:turno_id>', methods=['POST'])
+@jwt_required()
+def api_completar_turno(turno_id):
+    """Marca un turno como completado"""
+    usuario_id = get_jwt_identity()
+    usuario = Usuario.query.get(usuario_id)
+    
+    if not usuario or not usuario.es_admin:
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    turno = Turno.query.get_or_404(turno_id)
+    turno.estado = 'completado'
+    turno.hora_fin = datetime.now()
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'mensaje': f'Turno #{turno.numero} completado',
+        'turno': {
+            'id': turno.id,
+            'numero': turno.numero,
+            'estado': turno.estado,
+            'hora_fin': turno.hora_fin.isoformat()
+        }
+    })
+
+@app.route('/api/cancelar_turno/<int:turno_id>', methods=['POST'])
+@jwt_required()
+def api_cancelar_turno(turno_id):
+    """Cancela un turno"""
+    usuario_id = get_jwt_identity()
+    usuario = Usuario.query.get(usuario_id)
+    
+    if not usuario or not usuario.es_admin:
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    turno = Turno.query.get_or_404(turno_id)
+    turno.estado = 'cancelado'
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'mensaje': f'Turno #{turno.numero} cancelado',
+        'turno': {
+            'id': turno.id,
+            'numero': turno.numero,
+            'estado': turno.estado
+        }
+    })
 
 # =============================================================================
-# ENDPOINTS DE AUTENTICACIÓN
+# API ENDPOINTS - AUTENTICACIÓN
 # =============================================================================
 @app.route('/api/auth/login', methods=['POST'])
 def api_login():
@@ -508,7 +353,7 @@ def api_me():
     })
 
 # =============================================================================
-# ENDPOINTS DE ESTADÍSTICAS
+# API ENDPOINTS - ESTADÍSTICAS
 # =============================================================================
 @app.route('/api/estadisticas', methods=['GET'])
 @jwt_required()
@@ -534,6 +379,17 @@ def api_estadisticas():
     })
 
 # =============================================================================
+# HEALTH CHECK
+# =============================================================================
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Endpoint para verificar el estado del servidor"""
+    return jsonify({
+        'status': 'ok',
+        'message': 'API funcionando correctamente'
+    })
+
+# =============================================================================
 # INICIALIZACION Y EJECUCION
 # =============================================================================
 if __name__ == '__main__':
@@ -550,4 +406,4 @@ if __name__ == '__main__':
             db.session.commit()
             print("Usuario administrador creado: admin@turnero.com / admin123")
     
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=5000)

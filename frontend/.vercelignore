@@ -1,1 +1,4 @@
-# Vercel deployment trigger
+node_modules
+dist
+.env.local
+*.log
